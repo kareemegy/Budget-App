@@ -11,7 +11,8 @@ var budgetController = (function() {
     this.description = description;
     this.value = value;
   };
-  // Calculate the inc - exp
+
+  // Calculate the inc/exp
   var calculatetotal = function(type) {
     var sum = 0;
     data.allItems[type].forEach(function(cur) {
@@ -19,6 +20,7 @@ var budgetController = (function() {
     });
     data.totals[type] = sum;
   };
+
   // THE APP DATA
   var data = {
     allItems: { exp: [], inc: [] },
@@ -54,7 +56,7 @@ var budgetController = (function() {
       data.budget = data.totals.inc - data.totals.exp;
       if (data.totals.inc > 0) {
         // 3.calculate the percentage of income that we spent
-        data.percentage = Math.round(data.totals.exp / data.totals.inc) * 100;
+        data.percentage = Math.round((data.totals.exp / data.totals.inc) * 100);
       } else {
         data.percentage = -1;
       }
@@ -109,7 +111,7 @@ var UIController = (function() {
         element = domString.expensesContainer;
 
         html =
-          '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">30%</div><div class="item__delete"><button class="item__delete--btn"><i class="fas fa-times"></i></button></div></div></div>';
+          '<div class="item clearfix" id="exp-%id%"><div class="item__description">%description%</div><div class="right clearfix"><div class="item__value">%value%</div><div class="item__percentage">21%</div><div class="item__delete"><button class="item__delete--btn"><i class="fas fa-times"></i></button></div></div></div>';
       }
       //Replace the placeholder text with some actul data
       newhtml = html.replace("%id%", obj.id);
@@ -134,8 +136,15 @@ var UIController = (function() {
       document.querySelector(domString.incomelabel).textContent = obj.totalInc;
       document.querySelector(domString.expenseslabel).textContent =
         obj.totalExp;
-      document.querySelector(domString.percentagelabel).textContent =
-        obj.percentage;
+      // document.querySelector(domString.percentagelabel).textContent =
+      //   obj.percentage + "%";
+
+      if (obj.percentage > 0) {
+        document.querySelector(domString.percentagelabel).textContent =
+          obj.percentage;
+      } else {
+        document.querySelector(domString.expenseslabel).textContent = "---";
+      }
     },
     getDOMString: function() {
       return domString;
@@ -145,13 +154,14 @@ var UIController = (function() {
 
 //THE APP CONTROLLER
 var controller = (function(budgetCtrl, uICtrl) {
+  // UpDataBudget
   var updataBudget = function() {
     //1. Calculate the BUDGET
     budgetCtrl.calculateBudget();
     //2. Return the budget
     var budget = budgetCtrl.getBudget();
     //3. Display the BUDGET on the UI
-    console.log(budget);
+    uICtrl.displayBudget(budget);
   };
   //CallBACKFUNC
   var ctrlAddItem = function() {
@@ -183,6 +193,12 @@ var controller = (function(budgetCtrl, uICtrl) {
   return {
     init: function() {
       console.log("Appliction has started");
+      uICtrl.displayBudget({
+        budget: 0,
+        totalInc: 0,
+        totalExp: 0,
+        percentage: -1
+      });
       setupEventListeners();
     }
   };
