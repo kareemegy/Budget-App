@@ -5,6 +5,17 @@ var budgetController = (function() {
     this.id = id;
     this.description = description;
     this.value = value;
+    this.percentage = -1;
+  };
+  Expense.prototype.calculatePercentage = function(totalIncome) {
+    if (totalIncome > 0) {
+      this.percentage = Math.round((this.value / totalIncome) * 100);
+    } else {
+      this.percentage = -1;
+    }
+  };
+  Expense.prototype.getPercentage = function() {
+    return this.percentage;
   };
   var Income = function(id, description, value) {
     this.id = id;
@@ -59,7 +70,17 @@ var budgetController = (function() {
         data.allItems[type].splice(index, 1);
       }
     },
-
+    calculatePercentage: function() {
+      data.allItems.exp.forEach(function(cur) {
+        cur.calculatePercentage(data.totals.inc);
+      });
+    },
+    getPercentage: function() {
+      var allPerc = data.allItems.exp.map(function(cur) {
+        return cur.getPercentage();
+      });
+      return allPerc;
+    },
     calculateBudget: function() {
       // 1.calculate total  income and expenses
       calculatetotal("exp");
@@ -101,7 +122,8 @@ var UIController = (function() {
     incomelabel: ".budget__income--value",
     expensesLabel: ".budget__expenses--value",
     percentageLabel: ".budget__expenses--percentage",
-    container: ".container"
+    container: ".container",
+    expensesPercentagesLabel: ".item__percentage"
   };
 
   return {
@@ -160,6 +182,25 @@ var UIController = (function() {
         document.querySelector(domString.percentageLabel).textContent = "---";
       }
     },
+    displayPercentages: function(percentages) {
+      var fields = document.querySelectorAll(
+        domString.expensesPercentagesLabel
+      );
+
+      var nodeListForEach = function(list, callback) {
+        for (var i = 0; i < list.length; i++) {
+          callback(list[i], i);
+        }
+      };
+
+      nodeListForEach(fields, function(current, index) {
+        if (percentages[index] > 0) {
+          current.textContent = percentages[index] + "%";
+        } else {
+          current.textContent = "***";
+        }
+      });
+    },
     getDOMString: function() {
       return domString;
     }
@@ -177,6 +218,14 @@ var controller = (function(budgetCtrl, uICtrl) {
     //3. Display the BUDGET on the UI
     uICtrl.displayBudget(budget);
   };
+  var updataPercentages = function() {
+    // 1.Calculate percentages
+    budgetCtrl.calculatePercentage();
+    //2.Read percentages from the budget controller
+    var percentages = budgetCtrl.getPercentage;
+    //3.Update the Ui with the new percentages
+    uICtrl.displayPercentages(percentages());
+  };
   //CallBACKFUNC
   var ctrlAddItem = function() {
     var input, newItem;
@@ -191,6 +240,8 @@ var controller = (function(budgetCtrl, uICtrl) {
       uICtrl.clearFields();
       //5.Calculate and update budget
       updataBudget();
+      //6.Calculate and update percentages
+      updataPercentages();
     }
   };
   //Delete Item
